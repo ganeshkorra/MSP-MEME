@@ -13,11 +13,13 @@ export class CollectionTrackerUI extends Component {
     public gameManager: GameManager | null = null;
     public categoryName: string = "";
     private uiOpacity: UIOpacity = null;
+    private sceneOpacity: number = 255;
     private progressBarWidth: number = 0;
     private pulseAnimation: Tween<Node> | null = null;
 
     onLoad() {
         this.uiOpacity = this.getComponent(UIOpacity) ?? this.addComponent(UIOpacity);
+        this.sceneOpacity = this.uiOpacity.opacity;
         if (this.progressBarFilledNode) {
             this.progressBarWidth = this.progressBarFilledNode.getComponent(UITransform)!.width;
         }
@@ -28,16 +30,17 @@ export class CollectionTrackerUI extends Component {
     }
 
     private onTrackerClicked(): void {
-        this.gameManager?.requestItemSpawn(this.categoryName);
+        // Tap to spawn disabled - items spawn automatically on merge
+        // this.gameManager?.requestItemSpawn(this.categoryName);
     }
 
     public setStateLocked() {
-        if (this.uiOpacity) this.uiOpacity.opacity = 128;
+        if (this.uiOpacity) this.uiOpacity.opacity = this.sceneOpacity;
         if (this.lockIcon) this.lockIcon.active = true;
     }
 
     public setStateActive(shouldAnimate: boolean) {
-        if (this.uiOpacity) this.uiOpacity.opacity = 255;
+        if (this.uiOpacity) this.uiOpacity.opacity = this.sceneOpacity;
         if (this.lockIcon) this.lockIcon.active = false;
     }
 

@@ -3,6 +3,7 @@ import { ItemData } from './ItemData';
 import { ItemController } from './ItemController';
 import { CollectionTrackerUI } from './CollectionTrackerUI';
 import { TutorialController } from './TutorialController';
+import { Analytics, analyticsEvents } from './Analytics';
 
 const { ccclass, property } = _decorator;
 
@@ -49,7 +50,7 @@ export class GameManager extends Component {
     @property({ type: Prefab }) public timeRewardTextPrefab: Prefab | null = null;
 
     public isGameOver: boolean = false;
-    private readonly IDLE_TUTORIAL_THRESHOLD = 5.0;
+    private readonly IDLE_TUTORIAL_THRESHOLD = 10;
     private readonly SPOTLIGHT_DARK_OPACITY = 200;
     private readonly ACTIVE_COLLECTION_COUNT = 2;
     // private readonly TRASH_COST_SECONDS = 10;
@@ -142,6 +143,11 @@ export class GameManager extends Component {
         this.refreshCollectionTrackerStates();
         this.spawnInitialItems();
         this.scheduleOnce(() => this.runInitialTutorialStep(), 1.0);
+        
+        // Track game display
+        this.scheduleOnce(() => {
+            Analytics.instance?.dispatchEvent(analyticsEvents.DISPLAYED);
+        }, 0.5);
 
         // Trash bin commented out - items no longer deleted
         // if (this.trashBinButtonNode) {
@@ -229,6 +235,8 @@ export class GameManager extends Component {
         if (!this.isGameStarted && !this.isWaitingForFinalMerge) { // Don't restart BGM if we're just waiting
             this.isGameStarted = true;
             this.bgmAudioSource?.play();
+            // Track challenge start
+            Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_STARTED);
             this.collectionTrackers.forEach((tracker, index) => {
                 const button = tracker.node.getComponent(Button);
                 if (button) button.interactable = true;
@@ -410,6 +418,17 @@ export class GameManager extends Component {
         if (!trackerUI) return;
         
         const progressSet = this.collectionProgress.get(categoryName) || new Set();
+        const completionRatio = goal.requiredItemIds.length > 0 ? progressSet.size / goal.requiredItemIds.length : 0;
+        
+        // Track progress milestones (only first time crossing each threshold)
+        if (completionRatio >= 0.25 && completionRatio < 0.5) {
+            Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_PASS_25);
+        } else if (completionRatio >= 0.5 && completionRatio < 0.75) {
+            Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_PASS_50);
+        } else if (completionRatio >= 0.75 && completionRatio < 1.0) {
+            Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_PASS_75);
+        }
+        
         if (progressSet.size >= goal.requiredItemIds.length && !goal.isComplete) {
             goal.isComplete = true;
             trackerUI.setStateCompleted();
@@ -643,6 +662,18 @@ export class GameManager extends Component {
         if (this.endScreenNode) {
             this.endScreenNode.active = true;
             if (this.endScreenTitleLabel) this.endScreenTitleLabel.string = didWin ? this.winMessage : this.loseMessage;
+            
+            // Track game outcome
+            if (didWin) {
+                Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_SOLVED);
+            } else {
+                Analytics.instance?.dispatchEvent(analyticsEvents.CHALLENGE_FAILED);
+            }
+            
+            // Show endcard
+            this.scheduleOnce(() => {
+                Analytics.instance?.dispatchEvent(analyticsEvents.ENDCARD_SHOWN);
+            }, 0.5);
         }
     }
     

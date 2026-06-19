@@ -1,6 +1,7 @@
 // FILE: /assets/Scripts/CTAButtonHandler.ts
 
 import { _decorator, Component, AudioSource, find } from 'cc';
+import { Analytics, analyticsEvents } from './Analytics';
 declare const super_html_playable: any;
 const { ccclass } = _decorator;
 
@@ -19,6 +20,9 @@ export class CTAButtonHandler extends Component {
 
     public onStoreButtonClicked(): void {
         console.log("Store button clicked!");
+        
+        // Track CTA click
+        Analytics.instance?.dispatchEvent(analyticsEvents.CTA_CLICKED);
         
         // Find main audio source to stop music on click
         const mainAudio = find("Canvas-001/GameCamera")?.getComponent(AudioSource);

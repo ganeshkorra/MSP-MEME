@@ -1,0 +1,37 @@
+// FILE: /assets/Scripts/CTAButtonHandler.ts
+
+import { _decorator, Component, AudioSource, find } from 'cc';
+declare const super_html_playable: any;
+const { ccclass } = _decorator;
+
+@ccclass('CTAButtonHandler')
+export class CTAButtonHandler extends Component {
+    private adHandler: any = null;
+
+    onLoad() {
+        if (typeof super_html_playable !== 'undefined') {
+            this.adHandler = new super_html_playable();
+            console.log("Ad network library (super_html_playable) initialized successfully.");
+        } else {
+            console.warn("Ad network library not found. Clicks will use a fallback 'window.open'.");
+        }
+    }
+
+    public onStoreButtonClicked(): void {
+        console.log("Store button clicked!");
+        
+        // Find main audio source to stop music on click
+        const mainAudio = find("Canvas-001/GameCamera")?.getComponent(AudioSource);
+        if (mainAudio) {
+            mainAudio.stop();
+        }
+        
+        if (this.adHandler && typeof this.adHandler.download === 'function') {
+            console.log("Calling ad network's download() function...");
+            this.adHandler.download();
+        } else {
+            console.log("FALLBACK: Opening a default store URL.");
+            window.open("https://play.google.com/store/apps/details?id=com.game.goolny.stickers", "_blank");
+        }
+    }
+}

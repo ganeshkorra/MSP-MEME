@@ -1,0 +1,134 @@
+{
+  "ver": "1.0.27",
+  "importer": "image",
+  "imported": true,
+  "uuid": "66eb648d-cc85-4d5e-bb22-119be5e0958b",
+  "files": [
+    ".json",
+    ".png"
+  ],
+  "subMetas": {
+    "6c48a": {
+      "importer": "texture",
+      "uuid": "66eb648d-cc85-4d5e-bb22-119be5e0958b@6c48a",
+      "displayName": "Minimalist Trash Bin Icon 1",
+      "id": "6c48a",
+      "name": "texture",
+      "userData": {
+        "wrapModeS": "clamp-to-edge",
+        "wrapModeT": "clamp-to-edge",
+        "imageUuidOrDatabaseUri": "66eb648d-cc85-4d5e-bb22-119be5e0958b",
+        "isUuid": true,
+        "visible": false,
+        "minfilter": "linear",
+        "magfilter": "linear",
+        "mipfilter": "none",
+        "anisotropy": 0
+      },
+      "ver": "1.0.22",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    },
+    "f9941": {
+      "importer": "sprite-frame",
+      "uuid": "66eb648d-cc85-4d5e-bb22-119be5e0958b@f9941",
+      "displayName": "Minimalist Trash Bin Icon 1",
+      "id": "f9941",
+      "name": "spriteFrame",
+      "userData": {
+        "trimThreshold": 1,
+        "rotated": false,
+        "offsetX": -0.5,
+        "offsetY": 3.5,
+        "trimX": 36,
+        "trimY": 11,
+        "width": 99,
+        "height": 143,
+        "rawWidth": 172,
+        "rawHeight": 172,
+        "borderTop": 0,
+        "borderBottom": 0,
+        "borderLeft": 0,
+        "borderRight": 0,
+        "packable": true,
+        "pixelsToUnit": 100,
+        "pivotX": 0.5,
+        "pivotY": 0.5,
+        "meshType": 0,
+        "vertices": {
+          "rawPosition": [
+            -49.5,
+            -71.5,
+            0,
+            49.5,
+            -71.5,
+            0,
+            -49.5,
+            71.5,
+            0,
+            49.5,
+            71.5,
+            0
+          ],
+          "indexes": [
+            0,
+            1,
+            2,
+            2,
+            1,
+            3
+          ],
+          "uv": [
+            36,
+            161,
+            135,
+            161,
+            36,
+            18,
+            135,
+            18
+          ],
+          "nuv": [
+            0.20930232558139536,
+            0.10465116279069768,
+            0.7848837209302325,
+            0.10465116279069768,
+            0.20930232558139536,
+            0.936046511627907,
+            0.7848837209302325,
+            0.936046511627907
+          ],
+          "minPos": [
+            -49.5,
+            -71.5,
+            0
+          ],
+          "maxPos": [
+            49.5,
+            71.5,
+            0
+          ]
+        },
+        "isUuid": true,
+        "imageUuidOrDatabaseUri": "66eb648d-cc85-4d5e-bb22-119be5e0958b@6c48a",
+        "atlasUuid": "",
+        "trimType": "auto"
+      },
+      "ver": "1.0.12",
+      "imported": true,
+      "files": [
+        ".json"
+      ],
+      "subMetas": {}
+    }
+  },
+  "userData": {
+    "type": "sprite-frame",
+    "hasAlpha": true,
+    "fixAlphaTransparencyArtifacts": false,
+    "redirect": "66eb648d-cc85-4d5e-bb22-119be5e0958b@6c48a"
+  }
+}

@@ -9199,7 +9199,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "f88b1907-3956-4e90-b940-47da109857da@f9941",
+      "__uuid__": "93e3b6e2-dd25-4e7a-ace7-96441de02b98@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,
@@ -12215,15 +12215,15 @@
     "__type__": "ItemData",
     "itemId": 401,
     "outlineSprite": {
-      "__uuid__": "0164ad55-1274-4fa1-b11e-c7882f4dda50@f9941",
+      "__uuid__": "c2f00079-6274-444f-b2ec-1067dccd3a39@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "graySprite": {
-      "__uuid__": "d05d59f5-387d-436f-83c5-0b7cbb2cf65a@f9941",
+      "__uuid__": "6786d24a-beb3-4e0b-830c-4643323c466d@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "colorSprite": {
-      "__uuid__": "f88b1907-3956-4e90-b940-47da109857da@f9941",
+      "__uuid__": "93e3b6e2-dd25-4e7a-ace7-96441de02b98@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "mergeSound": {

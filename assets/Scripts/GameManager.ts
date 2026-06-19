@@ -51,6 +51,7 @@ export class GameManager extends Component {
     public isGameOver: boolean = false;
     private readonly IDLE_TUTORIAL_THRESHOLD = 5.0;
     private readonly SPOTLIGHT_DARK_OPACITY = 200;
+    private readonly ACTIVE_COLLECTION_COUNT = 2;
     // private readonly TRASH_COST_SECONDS = 10;
     private readonly ENERGY_COST_TO_SPAWN = 5;
     
@@ -63,7 +64,6 @@ export class GameManager extends Component {
     private originalStartNodeParent: Node = null;
     private isIdleSpotlightActive: boolean = false;
     private idleSpotlightItems: Node[] = [];
-    private hasUnlockedFinalStage: boolean = false;
     private isWaitingForFinalMerge: boolean = false;
     private isInitialClickTutorialActive: boolean = false;
     private originalClickTutorialParent: Node | null = null;
@@ -113,7 +113,6 @@ export class GameManager extends Component {
         this.isGameOver = false; this.isGameStarted = false; this.isTutorialActive = false;
         this.isInitialTutorialActive = true; this.isIdleSpotlightActive = false; 
         this.idleTime = 0;
-        this.hasUnlockedFinalStage = false;
         this.isWaitingForFinalMerge = false;
         this.collectionGoals.forEach(goal => goal.isComplete = false);
 
@@ -140,6 +139,7 @@ export class GameManager extends Component {
 
         this.timeRemaining = this.gameDuration;
         if (this.timerLabel) this.timerLabel.string = this.formatTime(this.timeRemaining);
+        this.refreshCollectionTrackerStates();
         this.spawnInitialItems();
         this.scheduleOnce(() => this.runInitialTutorialStep(), 1.0);
 
@@ -165,10 +165,9 @@ export class GameManager extends Component {
             !this.isWaitingForFinalMerge // Also pause idle check when waiting
         ) {
             this.idleTime += deltaTime;
-            // Hand tutorial commented out - dont show
-            // if (this.idleTime >= this.IDLE_TUTORIAL_THRESHOLD) {
-            //     this.tryStartHandTutorial();
-            // }
+            if (this.idleTime >= this.IDLE_TUTORIAL_THRESHOLD) {
+                this.tryStartHandTutorial();
+            }
         }
     }
     
@@ -283,19 +282,21 @@ export class GameManager extends Component {
     public requestItemSpawn(categoryName: string) {
         if (this.isInitialClickTutorialActive) this.cleanupInitialClickTutorial();
         if (this.isGameOver || this.isWaitingForFinalMerge) return; // Prevent spawning during final wait
+        const requestedGoalIndex = this.collectionGoals.findIndex(g => g.categoryName === categoryName);
+        if (requestedGoalIndex === -1) return;
+        const isClickable = this.getActiveIncompleteGoalIndexes().includes(requestedGoalIndex);
+        if (!isClickable) return;
+        const activeGoal = this.collectionGoals[requestedGoalIndex];
+        const missingItemIds = this.getMissingItemIds(activeGoal);
+        const spawnableItemDefs = this.itemDefinitions.filter(def => missingItemIds.includes(def.itemId));
+        if (spawnableItemDefs.length === 0) return;
         if (this.playerEnergy < this.ENERGY_COST_TO_SPAWN) {
             if(this.energyLabel) this.playScoreAnimation(this.energyLabel.node, true);
             return;
         }
+
         this.playerEnergy -= this.ENERGY_COST_TO_SPAWN;
         this.updateCurrencyUI();
-        const requestedGoalIndex = this.collectionGoals.findIndex(g => g.categoryName === categoryName);
-        if (requestedGoalIndex === -1) return;
-        let isClickable = this.hasUnlockedFinalStage ? (requestedGoalIndex === 2) : (requestedGoalIndex === 0 || requestedGoalIndex === 1);
-        if (!isClickable) return;
-        const activeGoal = this.collectionGoals[requestedGoalIndex];
-        const spawnableItemDefs = this.itemDefinitions.filter(def => activeGoal.requiredItemIds.includes(def.itemId));
-        if (spawnableItemDefs.length === 0) return;
         const randomItemData = spawnableItemDefs[Math.floor(randomRange(0, spawnableItemDefs.length))];
         this.createItem(randomItemData.itemId, 0, this.getSpawningPosition());
     }
@@ -416,6 +417,36 @@ export class GameManager extends Component {
             this.checkStageProgression();
         }
     }
+
+    private getActiveIncompleteGoalIndexes(): number[] {
+        const indexes: number[] = [];
+
+        for (let i = 0; i < this.collectionGoals.length; i++) {
+            const goal = this.collectionGoals[i];
+            if (!goal || goal.isComplete || this.getMissingItemIds(goal).length === 0) continue;
+
+            indexes.push(i);
+            if (indexes.length >= this.ACTIVE_COLLECTION_COUNT) break;
+        }
+
+        return indexes;
+    }
+
+    private refreshCollectionTrackerStates(): void {
+        const activeGoalIndexes = new Set(this.getActiveIncompleteGoalIndexes());
+
+        this.collectionTrackers.forEach((tracker, index) => {
+            if (!tracker?.node) return;
+            const goal = this.collectionGoals[index];
+            if (!goal || goal.isComplete) return;
+
+            if (activeGoalIndexes.has(index)) {
+                tracker.setStateActive(false);
+            } else {
+                tracker.setStateLocked();
+            }
+        });
+    }
     
     private checkStageProgression() {
         const allGoalsComplete = this.collectionGoals.every(g => g.isComplete);
@@ -434,19 +465,8 @@ export class GameManager extends Component {
 
             return;
         }
-        
-        if (!this.hasUnlockedFinalStage && this.collectionGoals[0]?.isComplete && this.collectionGoals[1]?.isComplete) {
-            this.hasUnlockedFinalStage = true;
-            this.collectionTrackers[0].stopPulseAnimation();
-            this.collectionTrackers[1].stopPulseAnimation();
-            const nextTracker = this.collectionTrackers[2];
-            if (nextTracker) {
-                nextTracker.setStateActive(true);
-                // Collection UI pulsing disabled - not using tap to spawn
-                // nextTracker.startPulseAnimation();
-                this.scheduleOnce(() => { for (let i = 0; i < 3; i++) this.requestItemSpawn(nextTracker.categoryName); }, 0.5);
-            }
-        }
+
+        this.refreshCollectionTrackerStates();
     }
 
     private setupInitialClickTutorial(targetButton: Node) {
@@ -604,9 +624,10 @@ export class GameManager extends Component {
             }
         }
 
-        if (tutorialPair) {
+        if (tutorialPair && this.tutorialController) {
             this.setupIdleSpotlight(tutorialPair[0], tutorialPair[1]);
             this.isTutorialActive = true;
+            this.tutorialController.node.active = true;
             this.tutorialController.playTutorial(tutorialPair[0], tutorialPair[1]);
         }
     }
@@ -715,9 +736,9 @@ export class GameManager extends Component {
         for (const itemId of this.initialSpawnItemIds) { 
             const spawnPosition = this.getSpawningPosition(); 
             this.createItem(itemId, 0, spawnPosition); 
-        } 
+        }
     }
-    
+
     private spawnInitialRandomOutlineItem() {
         if (this.collectionGoals.length < 2) return;
         const startingItemIds = [
@@ -738,56 +759,72 @@ export class GameManager extends Component {
         this.createItem(randomItemData.itemId, 0, spawnPosition);
     }
     
+    private getActiveIncompleteGoals(): CollectionGoal[] {
+        return this.getActiveIncompleteGoalIndexes()
+            .map(index => this.collectionGoals[index])
+            .filter(goal => goal && !goal.isComplete && this.getMissingItemIds(goal).length > 0);
+    }
+
+    private getMissingItemIds(goal: CollectionGoal): number[] {
+        const progressSet = this.collectionProgress.get(goal.categoryName) || new Set<number>();
+        return goal.requiredItemIds.filter(itemId => !progressSet.has(itemId));
+    }
+
+    private countBoardItemsById(itemId: number): number {
+        if (!this.itemContainer) return 0;
+
+        return this.itemContainer.children.reduce((count, itemNode) => {
+            const controller = itemNode.getComponent(ItemController);
+            return controller && controller.itemId === itemId ? count + 1 : count;
+        }, 0);
+    }
+
+    private chooseGoalForAutoSpawn(): CollectionGoal | null {
+        const goals = this.getActiveIncompleteGoals();
+        if (goals.length === 0) return null;
+
+        goals.sort((a, b) => {
+            const aMissingCount = this.getMissingItemIds(a).length;
+            const bMissingCount = this.getMissingItemIds(b).length;
+            return aMissingCount - bMissingCount;
+        });
+
+        return goals[0];
+    }
+
+    private chooseMissingItemIdForAutoSpawn(goal: CollectionGoal): number | null {
+        const missingItemIds = this.getMissingItemIds(goal).filter(itemId =>
+            this.itemDefinitions.some(def => def.itemId === itemId)
+        );
+        if (missingItemIds.length === 0) return null;
+
+        missingItemIds.sort((a, b) => this.countBoardItemsById(a) - this.countBoardItemsById(b));
+        const lowestBoardCount = this.countBoardItemsById(missingItemIds[0]);
+        const bestItemIds = missingItemIds.filter(itemId => this.countBoardItemsById(itemId) === lowestBoardCount);
+
+        return bestItemIds[Math.floor(randomRange(0, bestItemIds.length))];
+    }
+    
     private spawnAutoItem() {
-        console.log("spawnAutoItem called | isGameOver:", this.isGameOver, "isWaitingForFinalMerge:", this.isWaitingForFinalMerge);
-        
-        if (this.isGameOver || this.isWaitingForFinalMerge) {
-            console.log("spawnAutoItem: Game over or waiting for final merge");
-            return;
-        }
+        if (this.isGameOver || this.isWaitingForFinalMerge) return;
         if (!this.collectionGoals || this.collectionGoals.length === 0) {
             console.warn("spawnAutoItem: No collection goals");
             return;
         }
-        
-        // Determine which category to spawn from
-        let activeGoal: CollectionGoal | null = null;
-        
-        if (!this.hasUnlockedFinalStage) {
-            // Before final stage: spawn from first two active categories
-            if (this.collectionGoals.length >= 2) {
-                const activeCategoryIndex = Math.random() < 0.5 ? 0 : 1;
-                activeGoal = this.collectionGoals[activeCategoryIndex];
-            } else if (this.collectionGoals.length === 1) {
-                // Fallback: if only 1 goal, use it
-                activeGoal = this.collectionGoals[0];
-            }
-        } else {
-            // After final stage: spawn from third category
-            if (this.collectionGoals.length >= 3) {
-                activeGoal = this.collectionGoals[2];
-            }
-        }
-        
-        if (!activeGoal) {
-            console.warn("spawnAutoItem: No active goal determined | hasUnlockedFinalStage:", this.hasUnlockedFinalStage, "goalCount:", this.collectionGoals.length);
+
+        const targetGoal = this.chooseGoalForAutoSpawn();
+        if (!targetGoal) {
+            console.warn("spawnAutoItem: No incomplete active collection to spawn for.");
             return;
         }
-        
-        if (!activeGoal.requiredItemIds || activeGoal.requiredItemIds.length === 0) {
-            console.warn("spawnAutoItem: Active goal has no required items", activeGoal.categoryName);
+
+        const targetItemId = this.chooseMissingItemIdForAutoSpawn(targetGoal);
+        if (targetItemId === null) {
+            console.warn("spawnAutoItem: No missing spawnable item found for category", targetGoal.categoryName);
             return;
         }
-        
-        const spawnableItemDefs = this.itemDefinitions.filter(def => activeGoal!.requiredItemIds.includes(def.itemId));
-        if (spawnableItemDefs.length === 0) {
-            console.warn("spawnAutoItem: No spawnable items found for category", activeGoal.categoryName);
-            return;
-        }
-        
-        const randomItemData = spawnableItemDefs[Math.floor(randomRange(0, spawnableItemDefs.length))];
-        console.log("✓ spawnAutoItem: Spawning item", randomItemData.itemId, "from category", activeGoal.categoryName);
-        this.createItem(randomItemData.itemId, 0, this.getSpawningPosition());
+
+        this.createItem(targetItemId, 0, this.getSpawningPosition());
     }
     
     getSpawningPosition(): Vec3 {

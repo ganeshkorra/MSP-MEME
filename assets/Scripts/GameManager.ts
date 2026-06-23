@@ -223,6 +223,41 @@ export class GameManager extends Component {
         this.clickTutorialTextContainer.active = false;
     }
 
+    private showFinalMergePrompt(): void {
+        if (!this.dragToMatchText) return;
+
+        Tween.stopAllByTarget(this.dragToMatchText);
+
+        const label = this.dragToMatchText.getComponent(Label);
+        if (label) {
+            label.string = "One Last Merge!";
+            label.color = Color.WHITE;
+        }
+
+        const opacityComp = this.dragToMatchText.getComponent(UIOpacity) ?? this.dragToMatchText.addComponent(UIOpacity);
+        Tween.stopAllByTarget(opacityComp);
+        opacityComp.opacity = 255;
+
+        this.dragToMatchText.active = true;
+        this.dragToMatchText.setSiblingIndex(999);
+        this.dragToMatchText.setScale(new Vec3(0, 0, 1));
+
+        tween(this.dragToMatchText)
+            .to(0.45, { scale: Vec3.ONE }, { easing: 'backOut' })
+            .call(() => {
+                if (!this.dragToMatchText?.isValid || !this.isWaitingForFinalMerge) return;
+
+                tween(this.dragToMatchText)
+                    .sequence(
+                        tween().to(0.7, { scale: new Vec3(1.05, 1.05, 1) }, { easing: 'quadInOut' }),
+                        tween().to(0.7, { scale: Vec3.ONE }, { easing: 'quadInOut' })
+                    )
+                    .repeatForever()
+                    .start();
+            })
+            .start();
+    }
+
     public playerDidStartDrag() {
         if(this.dragToMatchText?.active) {
             Tween.stopAllByTarget(this.dragToMatchText); 
@@ -472,6 +507,7 @@ export class GameManager extends Component {
         if (allGoalsComplete && !this.isWaitingForFinalMerge) {
             this.isWaitingForFinalMerge = true;
             console.log("All collections complete! Waiting for one last merge to end the game.");
+            this.showFinalMergePrompt();
 
             this.isGameStarted = false; 
             if (this.timerLabel) {

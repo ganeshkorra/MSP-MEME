@@ -326,9 +326,9 @@
     "_dstBlendFactor": 4,
     "_color": {
       "__type__": "cc.Color",
-      "r": 252,
-      "g": 245,
-      "b": 213,
+      "r": 230,
+      "g": 225,
+      "b": 201,
       "a": 255
     },
     "_spriteFrame": {

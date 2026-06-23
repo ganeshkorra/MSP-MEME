@@ -6,6 +6,7 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0", 
-    "strict": false
+    "strict": false,
+    "lib": ["es2016", "dom"]
   }
 }

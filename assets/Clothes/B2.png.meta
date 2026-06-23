@@ -118,7 +118,7 @@
         "trimType": "auto"
       },
       "ver": "1.0.12",
-      "imported": false,
+      "imported": true,
       "files": [
         ".json"
       ],
